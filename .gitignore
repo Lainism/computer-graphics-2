@@ -52,7 +52,10 @@ Temporary Items
 assignment1/bin
 assignment1/build
 assignment1/Debug
+assignment1/src/plotter/Debug
+assignment1/src/plotter/Release
 assignment1/reference_assignment1_32bit.exe
 assignment1/reference_assignment1_64bit.exe
 assignment1/base.VC.db
+assignment1/base.VC.opendb
 assignment1/base.VC.VC.opendb

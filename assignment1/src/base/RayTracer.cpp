@@ -75,13 +75,17 @@ void RayTracer::saveHierarchy(const char* filename, const std::vector<RTTriangle
 void RayTracer::constructHierarchy(std::vector<RTTriangle>& triangles, SplitMode splitMode) {
     // YOUR CODE HERE (R1):
 	int m_size = triangles.size();
+	m_tris = triangles;
 
 	if (m_size == 1) {
 		m_triangles = &triangles;
 		return;
 	}
 
-	//Using object median here
+	triangles[1].max();
+
+	constructHierarchy();
+
     m_triangles = &triangles;
 }
 

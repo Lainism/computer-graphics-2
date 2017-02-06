@@ -47,6 +47,7 @@ public:
 
 private:
 	mutable std::atomic<int> m_rayCount;
+	std::vector<RTTriangle> &m_tris;
 };
 
 
