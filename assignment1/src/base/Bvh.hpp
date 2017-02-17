@@ -18,7 +18,7 @@ namespace FW
 	public:
 		Bvh(std::vector<RTTriangle>& triangles, SplitMode splitMode);
 	private:
-		Node Build(int i1, int i2, int axis);
+		Node Build(int i1, int i2);
 		std::vector<RTTriangle> &m_tris;
 		std::vector<Node> nodevector;
 	};
