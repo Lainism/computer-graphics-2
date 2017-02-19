@@ -17,10 +17,10 @@ namespace FW
 	class Bvh {
 	public:
 		Bvh(std::vector<RTTriangle>& triangles, SplitMode splitMode);
-	private:
-		Node Build(int i1, int i2);
+		std::vector<std::unique_ptr<Node>> nodevector;
 		std::vector<RTTriangle> &m_tris;
-		std::vector<Node> nodevector;
+	private:
+		std::unique_ptr<Node> Build(int i1, int i2);
 	};
 
 }

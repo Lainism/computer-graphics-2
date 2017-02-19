@@ -5,12 +5,16 @@
 
 namespace FW {
 
-	struct Node
+	class Node
 	{
+	public:
 		AABB box; // Axis-aligned bounding box
 		int startPrim, endPrim; // Indices in the global list
 		std::unique_ptr<Node> leftChild;
 		std::unique_ptr<Node> rightChild;
+
+		Node();
+		~Node();
 	};
 
 }

@@ -74,8 +74,12 @@ void RayTracer::saveHierarchy(const char* filename, const std::vector<RTTriangle
 
 void RayTracer::constructHierarchy(std::vector<RTTriangle>& triangles, SplitMode splitMode) {
     // YOUR CODE HERE (R1):
+
+	tree = new Bvh(triangles, splitMode);
+
+	
 	int m_size = triangles.size();
-	m_tris = triangles;
+	//m_tris = triangles;
 
 	if (m_size == 1) {
 		m_triangles = &triangles;
@@ -84,11 +88,41 @@ void RayTracer::constructHierarchy(std::vector<RTTriangle>& triangles, SplitMode
 
 	triangles[1].max();
 
-	constructHierarchy();
+	//constructHierarchy();
 
     m_triangles = &triangles;
+	
 }
 
+bool RayTracer::check_intersect(AABB& box, const Vec3f& orig, const Vec3f& dir) const {
+	auto vmin = box.min;
+	auto vmax = box.max;
+
+	auto xmin = (vmin[0] - orig[0]) / dir[0];
+	auto xmax = (vmax[0] - orig[0]) / dir[0];
+
+	auto ymin = (vmin[1] - orig[1]) / dir[1];
+	auto ymax = (vmax[1] - orig[1]) / dir[1];
+
+	auto zmin = (vmin[2] - orig[2]) / dir[2];
+	auto zmax = (vmax[2] - orig[2]) / dir[2];
+
+	if (xmin > xmax) { std::swap(xmin, xmax); }
+	if (ymin > ymax) { std::swap(ymin, ymax); }
+	if (zmin > zmax) { std::swap(zmin, zmax); }
+
+	if ((xmin > ymax) || (ymin > xmax)) { return false; }
+
+	if (ymin > xmin) { xmin = ymin; }
+	if (ymax < xmax) { xmax = ymax; }
+
+	if ((xmin > zmax) || (zmin > xmax)) { return false; }
+
+	if (zmin > xmin) { xmin = zmin; }
+	if (zmax < xmax) { xmax = zmax; }
+
+	return true;
+}
 
 RaycastResult RayTracer::raycast(const Vec3f& orig, const Vec3f& dir) const {
 	++m_rayCount;
@@ -97,12 +131,49 @@ RaycastResult RayTracer::raycast(const Vec3f& orig, const Vec3f& dir) const {
     // This is where you hierarchically traverse the tree you built!
     // You can use the existing code for the leaf nodes.
 
-    float tmin = 1.0f, umin = 0.0f, vmin = 0.0f;
-    int imin = -1;
+	//get root
+	int index = (*tree).nodevector[0]->startPrim;
+	AABB left_box;
+	AABB right_box;
 
-    RaycastResult castresult;
+	float tmin = 1.0f, umin = 0.0f, vmin = 0.0f;
+	int imin = -1;
+
+	RaycastResult castresult;
+
+	while (true) {
+
+		if (!(*tree).nodevector[index]->leftChild && !(*tree).nodevector[index]->rightChild) {
+			// We're in a leaf node
+			float t, u, v;
+			if ((*tree).m_tris[index].intersect_woop(orig, dir, t, u, v))
+			{
+				if (t > 0.0f && t < tmin)
+				{
+					imin = index;
+					tmin = t;
+					umin = u;
+					vmin = v;
+				}
+			}
+			break;
+		}
+
+		// What if there is only one node? - Impossible
+		AABB left_box = (*tree).nodevector[index]->box;
+		AABB right_box = (*tree).nodevector[index]->box;
+
+		// Calculate if the ray hits children based on origo and direction
+		if (check_intersect(left_box, orig, dir)) { index = (*tree).nodevector[index]->leftChild->startPrim; }
+		else if (check_intersect(right_box, orig, dir)) { index = (*tree).nodevector[index]->rightChild->startPrim; }
+		else {
+			// Ray missed the hitboxes
+			break;
+		}
+	}
 
     // Naive loop over all triangles.
+	/*
     for ( size_t i = 0; i < m_triangles->size(); ++i )
     {
         float t, u, v;
@@ -117,9 +188,10 @@ RaycastResult RayTracer::raycast(const Vec3f& orig, const Vec3f& dir) const {
             }
         }
     }
+	*/
 
     if (imin != -1) {
-        castresult = RaycastResult(&(*m_triangles)[imin], tmin, umin, vmin, orig + tmin*dir, orig, dir);
+        castresult = RaycastResult(&tree->m_tris[imin], tmin, umin, vmin, orig + tmin*dir, orig, dir);
     }
     return castresult;
 }

@@ -47,7 +47,9 @@ public:
 
 private:
 	mutable std::atomic<int> m_rayCount;
-	std::vector<RTTriangle> &m_tris;
+	Bvh* tree;
+	bool check_intersect(AABB& box, const Vec3f& orig, const Vec3f& dir) const;
+	//std::vector<RTTriangle> &m_tris;
 };
 
 
