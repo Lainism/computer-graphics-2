@@ -16,17 +16,10 @@ namespace FW
 
 	Bvh::Bvh(std::vector<RTTriangle>& triangles, SplitMode splitMode): m_tris (triangles)
 	{
-		std::unique_ptr<Node> node_ptr(new Node);
-
-		node_ptr->startPrim = 0;
-		node_ptr->endPrim = triangles.size() - 1;
-
-		nodevector.push_back(std::move(node_ptr));
-
 		Bvh::Build(0, triangles.size() - 1);
 	}
 
-	std::unique_ptr<Node> Bvh::Build(int i1, int i2)
+	Node Bvh::Build(int i1, int i2)
 	{
 		// Create a recursive function here
 		// First, let's find out min and max
@@ -65,11 +58,14 @@ namespace FW
 
 		int delta = i2 - i1;
 
+		(*node_ptr).leftChild = std::make_unique<Node>();
+		(*node_ptr).rightChild = std::make_unique<Node>();
+
 		// if empty, return and create node
 		// add stuff to nodevector
 		if (i1 < i2) {
-			(*node_ptr).leftChild =  Bvh::Build(i1, delta / 2 + i1);
-			(*node_ptr).rightChild =  Bvh::Build(delta / 2 + i1 + 1, i2);
+			(*node_ptr).leftChild =  std::move(Bvh::Build(i1, delta / 2 + i1));
+			(*node_ptr).rightChild =  std::move(Bvh::Build(delta / 2 + i1 + 1, i2));
 		}
 		else {
 			(*node_ptr).leftChild = NULL;
@@ -77,6 +73,6 @@ namespace FW
 		}
 
 		nodevector.push_back(std::move(node_ptr));
-		return node_ptr;
+		return (*node_ptr);
 	}
 }

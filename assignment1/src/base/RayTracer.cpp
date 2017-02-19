@@ -78,16 +78,16 @@ void RayTracer::constructHierarchy(std::vector<RTTriangle>& triangles, SplitMode
 	tree = new Bvh(triangles, splitMode);
 
 	
-	int m_size = triangles.size();
+	//int m_size = triangles.size();
 	//m_tris = triangles;
-
+	/*
 	if (m_size == 1) {
 		m_triangles = &triangles;
 		return;
 	}
 
 	triangles[1].max();
-
+	*/
 	//constructHierarchy();
 
     m_triangles = &triangles;
@@ -131,8 +131,9 @@ RaycastResult RayTracer::raycast(const Vec3f& orig, const Vec3f& dir) const {
     // This is where you hierarchically traverse the tree you built!
     // You can use the existing code for the leaf nodes.
 
-	//get root
-	int index = (*tree).nodevector[0]->startPrim;
+	// get root
+	// root get always pushed in the list last
+	int index = (*tree).nodevector.size()-1;
 	AABB left_box;
 	AABB right_box;
 
@@ -142,11 +143,10 @@ RaycastResult RayTracer::raycast(const Vec3f& orig, const Vec3f& dir) const {
 	RaycastResult castresult;
 
 	while (true) {
-
 		if (!(*tree).nodevector[index]->leftChild && !(*tree).nodevector[index]->rightChild) {
 			// We're in a leaf node
 			float t, u, v;
-			if ((*tree).m_tris[index].intersect_woop(orig, dir, t, u, v))
+			if ((*tree).m_tris[(*tree).nodevector[index]->startPrim].intersect_woop(orig, dir, t, u, v))
 			{
 				if (t > 0.0f && t < tmin)
 				{

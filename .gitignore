@@ -48,6 +48,9 @@ Temporary Items
 
 *.sdf
 *.suo
+*.log
+*.tlog
+*.bin
 
 assignment1/bin
 assignment1/build

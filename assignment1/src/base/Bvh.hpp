@@ -20,7 +20,7 @@ namespace FW
 		std::vector<std::unique_ptr<Node>> nodevector;
 		std::vector<RTTriangle> &m_tris;
 	private:
-		std::unique_ptr<Node> Build(int i1, int i2);
+		Node Build(int i1, int i2);
 	};
 
 }
