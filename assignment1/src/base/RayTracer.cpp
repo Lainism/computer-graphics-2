@@ -95,6 +95,9 @@ void RayTracer::constructHierarchy(std::vector<RTTriangle>& triangles, SplitMode
 }
 
 bool RayTracer::check_intersect(AABB& box, const Vec3f& orig, const Vec3f& dir) const {
+
+	// There might be a problem here...
+
 	auto vmin = box.min;
 	auto vmax = box.max;
 
@@ -133,7 +136,8 @@ RaycastResult RayTracer::raycast(const Vec3f& orig, const Vec3f& dir) const {
 
 	// get root
 	// root get always pushed in the list last
-	int index = (*tree).nodevector.size()-1;
+	//int index = (*tree).nodevector.size()-1;
+	Node* root = (*tree).root.get();
 	AABB left_box;
 	AABB right_box;
 
@@ -143,14 +147,14 @@ RaycastResult RayTracer::raycast(const Vec3f& orig, const Vec3f& dir) const {
 	RaycastResult castresult;
 
 	while (true) {
-		if (!(*tree).nodevector[index]->leftChild && !(*tree).nodevector[index]->rightChild) {
+		if (root->isLeaf) {
 			// We're in a leaf node
 			float t, u, v;
-			if ((*tree).m_tris[(*tree).nodevector[index]->startPrim].intersect_woop(orig, dir, t, u, v))
+			if ((*tree).m_tris[root->startPrim].intersect_woop(orig, dir, t, u, v))
 			{
 				if (t > 0.0f && t < tmin)
 				{
-					imin = index;
+					imin = root->startPrim;
 					tmin = t;
 					umin = u;
 					vmin = v;
@@ -160,12 +164,16 @@ RaycastResult RayTracer::raycast(const Vec3f& orig, const Vec3f& dir) const {
 		}
 
 		// What if there is only one node? - Impossible
-		AABB left_box = (*tree).nodevector[index]->box;
-		AABB right_box = (*tree).nodevector[index]->box;
+		AABB left_box = root->leftChild->box;
+		AABB right_box = root->rightChild->box;
 
 		// Calculate if the ray hits children based on origo and direction
-		if (check_intersect(left_box, orig, dir)) { index = (*tree).nodevector[index]->leftChild->startPrim; }
-		else if (check_intersect(right_box, orig, dir)) { index = (*tree).nodevector[index]->rightChild->startPrim; }
+		if (check_intersect(left_box, orig, dir)) {
+			root = root->leftChild.get();
+		}
+		else if (check_intersect(right_box, orig, dir)) {
+			root = root->rightChild.get();
+		}
 		else {
 			// Ray missed the hitboxes
 			break;
@@ -190,6 +198,7 @@ RaycastResult RayTracer::raycast(const Vec3f& orig, const Vec3f& dir) const {
     }
 	*/
 
+	// Changed triangles to using tree's local list, since it's sorted the same way as Bvh
     if (imin != -1) {
         castresult = RaycastResult(&tree->m_tris[imin], tmin, umin, vmin, orig + tmin*dir, orig, dir);
     }

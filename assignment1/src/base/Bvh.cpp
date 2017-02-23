@@ -16,10 +16,14 @@ namespace FW
 
 	Bvh::Bvh(std::vector<RTTriangle>& triangles, SplitMode splitMode): m_tris (triangles)
 	{
-		Bvh::Build(0, triangles.size() - 1);
+		root = std::make_unique<Node>();
+		root->isLeaf = false;
+		root->startPrim = 0;
+		root->endPrim = triangles.size() - 1;
+		Bvh::Build(root->startPrim, root->endPrim, *root);
 	}
 
-	Node Bvh::Build(int i1, int i2)
+	void Bvh::Build(int i1, int i2, Node& root)
 	{
 		// Create a recursive function here
 		// First, let's find out min and max
@@ -46,33 +50,29 @@ namespace FW
 		// Sort tris according to chosen axis
 		std::sort(m_tris.begin() + i1, m_tris.begin() + i2, [axis](const RTTriangle & a, const RTTriangle & b) -> bool { return a.centroid()[axis] > b.centroid()[axis]; });
 		
-		std::unique_ptr<Node> node_ptr(new Node);
-		
-		(*node_ptr).startPrim = i1;
-		(*node_ptr).endPrim = i2;
+		root.startPrim = i1;
+		root.endPrim = i2;
 
 		AABB hitbox = AABB();
 		hitbox.min = m_min;
 		hitbox.max = m_max;
-		(*node_ptr).box = hitbox;
+		root.box = hitbox;
 
 		int delta = i2 - i1;
-
-		(*node_ptr).leftChild = std::make_unique<Node>();
-		(*node_ptr).rightChild = std::make_unique<Node>();
-
+		
+		root.leftChild = std::make_unique<Node>();
+		root.rightChild = std::make_unique<Node>();
+		
 		// if empty, return and create node
 		// add stuff to nodevector
 		if (i1 < i2) {
-			(*node_ptr).leftChild =  std::move(Bvh::Build(i1, delta / 2 + i1));
-			(*node_ptr).rightChild =  std::move(Bvh::Build(delta / 2 + i1 + 1, i2));
+			Bvh::Build(i1, delta / 2 + i1, *(root.leftChild));
+			Bvh::Build(delta / 2 + i1 + 1, i2, *(root.rightChild));
+
+			root.isLeaf = false;
 		}
 		else {
-			(*node_ptr).leftChild = NULL;
-			(*node_ptr).rightChild = NULL;
+			root.isLeaf = true;
 		}
-
-		nodevector.push_back(std::move(node_ptr));
-		return (*node_ptr);
 	}
 }
