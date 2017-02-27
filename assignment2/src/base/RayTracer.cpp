@@ -21,17 +21,19 @@ namespace FW
 Vec2f getTexelCoords(Vec2f uv, const Vec2i size)
 {
 
-	// YOUR CODE HERE (R3):
-	// Get texel indices of texel nearest to the uv vector. Used in texturing.
-	// UV coordinates range from negative to positive infinity. First map them
-	// to a range between 0 and 1 in order to support tiling textures, then
-	// scale the coordinates by image resolution and find the nearest pixel.
+	// YOUR CODE HERE (R1):
+	// Integrate your implementation here.
+
+	// Not implemented in first round
 	return Vec2f();
 }
 
 Mat3f formBasis(const Vec3f& n) {
-    // YOUR CODE HERE (R4):
-    return Mat3f();
+    // YOUR CODE HERE (R1):
+    // Integrate your implementation here.
+
+	// Not implemented in first round
+    return rtlib::formBasis(n);
 }
 
 
@@ -55,6 +57,10 @@ String RayTracer::computeMD5( const std::vector<Vec3f>& vertices )
 
 RayTracer::RayTracer()
 {
+    // YOUR CODE HERE (R1):
+    // Integrate your implementation here.
+    // After that this is not needed anymore.
+    //m_rt.reset(new rtlib::RayTracer);
 }
 
 RayTracer::~RayTracer()
@@ -64,20 +70,20 @@ RayTracer::~RayTracer()
 
 void RayTracer::loadHierarchy(const char* filename, std::vector<RTTriangle>& triangles)
 {
-    // YOUR CODE HERE (R2):
-    m_triangles = &triangles;
+    // YOUR CODE HERE (R1):
+    // Integrate your implementation here.
+
+	// Not implemented in first round
+	//m_rt->loadHierarchy(filename, triangles);
+	m_triangles = &triangles;
 }
 
 void RayTracer::saveHierarchy(const char* filename, const std::vector<RTTriangle>& triangles) {
-    // YOUR CODE HERE (R2)
-}
-
-void RayTracer::constructHierarchy(std::vector<RTTriangle>& triangles, SplitMode splitMode) {
     // YOUR CODE HERE (R1):
+    // Integrate your implementation here.
+	// Not implemented in first round
 
-	tree = new Bvh(triangles, splitMode);
-    m_triangles = &triangles;
-	
+    //m_rt->saveHierarchy(filename, triangles);
 }
 
 bool RayTracer::check_intersect(AABB& box, const Vec3f& orig, const Vec3f& dir, float& tmin) const {
@@ -127,7 +133,6 @@ RaycastResult RayTracer::recursiveHelper(const Vec3f& orig, const Vec3f& dir, in
 
 	if (root->isLeaf) {
 		// We're in a leaf node
-		// TODO: loop through triangles (2-20?)
 		float t, u, v;
 		if ((*tree).m_tris[root->startPrim].intersect_woop(orig, dir, t, u, v))
 		{
@@ -181,7 +186,8 @@ RaycastResult RayTracer::recursiveHelper(const Vec3f& orig, const Vec3f& dir, in
 	else {
 		if (!both || (h1.t < h2.t)) {
 			castresult = h1;
-		} else {
+		}
+		else {
 			castresult = h2;
 		}
 	}
@@ -189,12 +195,20 @@ RaycastResult RayTracer::recursiveHelper(const Vec3f& orig, const Vec3f& dir, in
 	return castresult;
 }
 
+void RayTracer::constructHierarchy(std::vector<RTTriangle>& triangles, SplitMode splitMode) {
+    // YOUR CODE HERE (R1):
+    // Integrate your implementation here.
+	//m_rt->constructHierarchy(triangles, splitMode);
+	m_triangles = &triangles;
+}
+
+
 RaycastResult RayTracer::raycast(const Vec3f& orig, const Vec3f& dir) const {
 	++m_rayCount;
 
     // YOUR CODE HERE (R1):
-    // This is where you hierarchically traverse the tree you built!
-    // You can use the existing code for the leaf nodes.
+    // Integrate your implementation here.
+    //return m_rt->raycast(orig, dir);
 
 	Node* root = (*tree).root.get();
 	int imin = -1;
@@ -202,7 +216,7 @@ RaycastResult RayTracer::raycast(const Vec3f& orig, const Vec3f& dir) const {
 
 	RaycastResult castresult = RayTracer::recursiveHelper(orig, dir, imin, tmin, root);
 
-    return castresult;
+	return castresult;
 }
 
 
