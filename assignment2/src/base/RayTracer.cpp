@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include "rtIntersect.inl"
 #include <fstream>
+#include "Bvh.hpp"
 
 #include "rtlib.hpp"
 
@@ -199,6 +200,7 @@ void RayTracer::constructHierarchy(std::vector<RTTriangle>& triangles, SplitMode
     // YOUR CODE HERE (R1):
     // Integrate your implementation here.
 	//m_rt->constructHierarchy(triangles, splitMode);
+	tree = new Bvh(triangles, splitMode);
 	m_triangles = &triangles;
 }
 

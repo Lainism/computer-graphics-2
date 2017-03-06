@@ -41,41 +41,17 @@ void AreaLight::sample(float& pdf, Vec3f& p, int base, Random& rnd) {
 
     // (this does not do what it's supposed to!)
 
-	//source_area = 4*size.x*size.y;
-	// x*2+y^2 < 1
+	float x = rnd.getF32(-1, 1) * m_size.x;
+	float y = rnd.getF32(-1, 1) * m_size.y;
 
-	/*
-	//Naive way
+	// 1 / surface area of light
+	pdf = sqrt(1.0f / (4* m_size.x*m_size.y));
+	Vec4f temp;
+	temp[0] = x;
+	temp[1] = y;
+	temp[3] = 1.0f;
 
-	int success = 0;
-	int n = 10;
-
-	for (int i = 0; i < n; i++) {
-		float x = rnd.getF32() * 2 * m_size.x;
-		float y = rnd.getF32() * 2 * m_size.y;
-		if (x*x + y*y < 1) { success++; }
-	}
-
-	pdf = 4 * success / n;
-	*/
-
-	// Vec3f win =
-
-
-    // p = ????????
-	// Maybe pick a random point here?
-	// Or maybe m_size.x and m_size.y should be random and stored here?
-	// Yep, let's try that.
-
-	// Assuming rnd.getF32() gives me float between 0 and 1? Just guessing.
-	float x = rnd.getF32() * 2 * m_size.x;
-	float y = rnd.getF32() * 2 * m_size.y;
-
-	// Multiplication by two done already in previous step...
-	pdf = sqrt(1.0f - x*x - y*y);
-    p = Vec4f(m_xform.getCol(3)).getXYZ();
-	p[0] = x;
-	p[1] = y;
+    p = (m_xform * temp).getXYZ();
 }
 
 

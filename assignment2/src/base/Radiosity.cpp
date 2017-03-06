@@ -45,11 +45,13 @@ void Radiosity::vertexTaskFunc( MulticoreLauncher::Task& task )
     // hemispherical gathering integral. The commented code below gives you
     // an idea of the loop structure. Note that you also have to account
     // for how diffuse textures modulate the irradiance.
-
+	/*
     ctx.m_vecResult[ v ] = n*0.5+0.5;
     Sleep(1);
     return;
+	*/
 
+	Random rnd(v);
     
     // direct lighting pass? => integrate direct illumination by shooting shadow rays to light source
     if ( ctx.m_currentBounce == 0 )
@@ -62,9 +64,9 @@ void Radiosity::vertexTaskFunc( MulticoreLauncher::Task& task )
             Vec3f Pl;
 
             // construct vector from current vertex (o) to light sample
-			const Vec3f source = ctx.m_light->getPosition();
-			const Vec3f n_dir = o - source;
-			auto cast_res = ctx.m_rt->raycast(source, n_dir);
+			ctx.m_light->sample(pdf, Pl, 1, rnd);
+			Vec3f n_dir = Pl - o;
+			auto cast_res = ctx.m_rt->raycast(o, n_dir);
 
             // trace shadow ray to see if it's blocked
             if (cast_res.tri == nullptr){
@@ -73,8 +75,9 @@ void Radiosity::vertexTaskFunc( MulticoreLauncher::Task& task )
 
 				// Where to get T??
 				// E += E*T;
-				E += (1 / r ^ 2);
-				// clamp(float cos(x), min, max);
+				float a_cos = clamp(dot(-ctx.m_light->getNormal(), n_dir.normalized()), 0.0f, 1.0f);
+				float t_cos = clamp(dot(n_dir.normalized(), n), 0.0f, 1.0f);
+				E += (ctx.m_light->getEmission() / n_dir.lenSqr() * a_cos * t_cos) / pdf;
             }
         }
         // Note we are NOT multiplying by PI here;
