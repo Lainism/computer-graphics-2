@@ -50,7 +50,7 @@ void Radiosity::vertexTaskFunc( MulticoreLauncher::Task& task )
     Sleep(1);
     return;
 
-    /*
+    
     // direct lighting pass? => integrate direct illumination by shooting shadow rays to light source
     if ( ctx.m_currentBounce == 0 )
     {
@@ -62,11 +62,19 @@ void Radiosity::vertexTaskFunc( MulticoreLauncher::Task& task )
             Vec3f Pl;
 
             // construct vector from current vertex (o) to light sample
+			const Vec3f source = ctx.m_light->getPosition();
+			const Vec3f n_dir = o - source;
+			auto cast_res = ctx.m_rt->raycast(source, n_dir);
 
             // trace shadow ray to see if it's blocked
-            {
+            if (cast_res.tri == nullptr){
                 // if not, add the appropriate emission, 1/r^2 and clamped cosine terms, accounting for the PDF as well.
                 // accumulate into E
+
+				// Where to get T??
+				// E += E*T;
+				E += (1 / r ^ 2);
+				// clamp(float cos(x), min, max);
             }
         }
         // Note we are NOT multiplying by PI here;
@@ -74,7 +82,7 @@ void Radiosity::vertexTaskFunc( MulticoreLauncher::Task& task )
         // The result we are computing is _irradiance_, not radiosity.
         ctx.m_vecCurr[ v ] = E * (1.0f/ctx.m_numDirectRays);
         ctx.m_vecResult[ v ] = ctx.m_vecCurr[ v ];
-    }
+    } /*
     else
     {
         // OK, time for indirect!
