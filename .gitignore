@@ -4,6 +4,7 @@
 # Except...
 !*.cpp
 !*.hpp
+!README.txt
 !.gitignore
 
 # Subfolders
