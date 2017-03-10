@@ -1,9 +1,11 @@
 // solution code removed
 #include <memory>
+#include <vector>
 #include "rtutil.hpp"
 #include "BvhNode.hpp"
+#include "RTTriangle.hpp"
 
-FW::Node::Node(void)
+FW::Node::Node(std::vector<RTTriangle> &a) : n_tris(a)
 {
 }
 

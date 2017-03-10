@@ -135,17 +135,20 @@ RaycastResult RayTracer::recursiveHelper(const Vec3f& orig, const Vec3f& dir, in
 	if (root->isLeaf) {
 		// We're in a leaf node
 		float t, u, v;
-		if ((*tree).m_tris[root->startPrim].intersect_woop(orig, dir, t, u, v))
-		{
-			if (t > 0.0f && t < tmin)
-			{
-				imin = root->startPrim;
-				tmin = t;
-				umin = u;
-				vmin = v;
-				leafhit = true;
-			}
+		for (int s = 0; s < root->n_tris.size(); s++) {
+			if (root->n_tris[s].intersect_woop(orig, dir, t, u, v))
+					{
+						if (t > 0.0f && t < tmin)
+						{
+							imin = root->startPrim;
+							tmin = t;
+							umin = u;
+							vmin = v;
+							leafhit = true;
+						}
+					}
 		}
+		
 	}
 	else {
 

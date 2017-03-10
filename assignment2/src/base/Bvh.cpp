@@ -65,13 +65,16 @@ namespace FW
 
 		// if empty, return and create node
 		// add stuff to nodevector
-		if (i1 < i2) {
+		if (delta > nodesPerLeaf) {
 			Bvh::Build(i1, delta / 2 + i1, *(root.leftChild));
 			Bvh::Build(delta / 2 + i1 + 1, i2, *(root.rightChild));
 
 			root.isLeaf = false;
 		}
 		else {
+			for (int i = 0; i+i1 <= i2; i++) {
+				root.n_tris.push_back(m_tris[i1+i]);
+			}
 			root.isLeaf = true;
 		}
 	}
