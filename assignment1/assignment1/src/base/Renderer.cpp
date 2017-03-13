@@ -67,7 +67,7 @@ timingResult Renderer::rayTracePicture( RayTracer* rt, Image* image, const Camer
 
 	// YOUR CODE HERE(R5):
 	// remove this to enable multithreading (you also need to enable it in the project properties: C++/Language/Open MP support)
-	#pragma omp parallel for
+	//#pragma omp parallel for
     for ( int j = 0; j < height; ++j )
     {
         // Each thread must have its own random generator
@@ -149,8 +149,7 @@ void Renderer::getTextureParameters(const RaycastResult& hit, Vec3f& diffuse, Ve
 	// using the barycentric coordinates of the intersection (hit.u, hit.v) and the
 	// vertex texture coordinates hit.tri->m_vertices[i].t of the intersected triangle,
 	// compute the uv coordinate of the intersection point.
-	Vec2f uv = (1 - hit.u - hit.v) * hit.tri->m_vertices[0].t + hit.u * hit.tri->m_vertices[1].t + hit.v * hit.tri->m_vertices[2].t;
-
+	Vec2f uv = Vec2f(.0f);
 	Texture& diffuseTex = mat->textures[MeshBase::TextureType_Diffuse]; //note: you can fetch other kinds of textures like this too. 
 																		//By default specular maps, displacement maps and alpha stencils
 																		//are loaded too if the .mtl file specifies them.
@@ -161,7 +160,7 @@ void Renderer::getTextureParameters(const RaycastResult& hit, Vec3f& diffuse, Ve
 		Vec2i texelCoords = getTexelCoords(uv, img.getSize());
 
 		// YOUR CODE HERE (R3): uncomment the line below once you have implemented getTexelCoords.
-		diffuse = img.getVec4f(texelCoords).getXYZ();
+		//diffuse = img.getVec4f(texelCoords).getXYZ();
 	}
 	Texture& normalTex = mat->textures[MeshBase::TextureType_Normal];
 	if (normalTex.exists() && m_normalMapped) //check whether material uses a normal map
@@ -198,38 +197,11 @@ Vec4f Renderer::computeShadingHeadlight(const RaycastResult& hit, const CameraCo
 
 Vec4f Renderer::computeShadingAmbientOcclusion(RayTracer* rt, const RaycastResult& hit, const CameraControls& cameraCtrl, Random& rnd)
 {
+    Vec4f color;
 
     // YOUR CODE HERE (R4)
-	Vec3f n(hit.tri->normal());
-	if (dot(n, hit.dir) > 0) { n = -n; }
-	Vec3f hit_e = hit.point + 0.01f*n;
 
-	Mat3f base = formBasis(n);
-
-	int no_hit = 0;
-
-	for (int i = 0; i < Renderer::m_aoNumRays; i++) {
-		float x, y, z;
-		while (true) {
-			x = rnd.getF32(-1, 1);
-			y = rnd.getF32(-1, 1);
-
-			if (x*x + y*y <= 1) { break; }
-		}
-
-		z = sqrt(1 - x*x - y*y);
-
-		Vec3f rnd_v = Vec3f( x, y, z );
-		rnd_v = base * rnd_v;
-
-		auto result = rt->raycast(hit_e, m_aoRayLength * rnd_v.normalized());
-
-		if (result.tri == nullptr) { no_hit++; }
-	}
-	
-	float color = (float)no_hit / (float)m_aoNumRays;
-
-    return Vec4f(color, color, color, 0.0f);
+    return color;
 }
 
 Vec4f Renderer::computeShadingWhitted(RayTracer* rt, const RaycastResult& hit, const CameraControls& cameraCtrl, Random& rnd, int num_bounces)

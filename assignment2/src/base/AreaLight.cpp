@@ -43,7 +43,7 @@ void AreaLight::sample(float& pdf, Vec3f& p, int base, Random& rnd) {
 	float y = rnd.getF32(-1, 1) * m_size.y;
 
 	// 1 / surface area of light
-	pdf = sqrt(1.0f / (4* m_size.x*m_size.y));
+	pdf = 1.0f / (4* m_size.x*m_size.y);
 	Vec4f temp;
 	temp[0] = x;
 	temp[1] = y;

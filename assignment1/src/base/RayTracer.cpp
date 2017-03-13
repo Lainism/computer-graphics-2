@@ -30,8 +30,8 @@ Vec2f getTexelCoords(Vec2f uv, const Vec2i size)
 	Vec2f mapped;
 
 	// Map to 0 - 1
-	mapped[0] = tan(uv[0] * FW_PI / 2);
-	mapped[1] = tan(uv[1] * FW_PI / 2);
+	mapped[0] = uv.x - floor(uv.x);
+	mapped[1] = uv.y - floor(uv.y);
 
 	// Scale to resolution
 	mapped[0] *= size[0];
@@ -42,7 +42,23 @@ Vec2f getTexelCoords(Vec2f uv, const Vec2i size)
 
 Mat3f formBasis(const Vec3f& n) {
     // YOUR CODE HERE (R4):
-    return Mat3f();
+	Mat3f form;
+	Vec3f q = n;
+
+	int ind = 0;
+	if (abs(q.y) < abs(q[ind])) { ind = 1; }
+	if (abs(q.z) < abs(q[ind])) { ind = 2; }
+
+	q[ind] = 1;
+
+	Vec3f t = cross(n, q);
+	Vec3f b = cross(n, t);
+
+	form.col(0) = t.normalized();
+	form.col(1) = b.normalized();
+	form.col(2) = n;
+
+    return form;
 }
 
 

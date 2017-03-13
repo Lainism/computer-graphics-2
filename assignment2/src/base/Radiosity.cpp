@@ -100,25 +100,27 @@ void Radiosity::vertexTaskFunc( MulticoreLauncher::Task& task )
             // Draw a cosine weighted direction and find out where it hits (if anywhere)
             // You need to transform it from the local frame to the vertex' hemisphere using B.
 
-			float pdf;
+			/*
+			float pdf = cos(n, dir) / pi;
+			prdf = cos() * diffusion / pi;
+			E = prdf/pdf
+				-> E = diffusion * l_in*/
+
 			Vec3f P2;
 
 			// This... probably isn't right? Since this is (cosl(t)*cos(t)/r^2)*V
 			// We need just one cos... so we get cos(t)/FW_PI
-			ctx.m_light->sample(pdf, P2, 0, rnd);
+			float x, y, z;
+			while (true) {
+				x = rnd.getF32(-1, 1);
+				y = rnd.getF32(-1, 1);
 
-			// Maybe cos we're looking for here is...
-			// from previous excercise
-			// float a_cos = clamp(dot(-ctx.m_light->getNormal(), n_dir.normalized()), 0.0f, 1.0f);
+				if (x*x + y*y <= 1) { break; }
+			}
 
-			// make sure to check PI can't be zero...
-			if (FW_PI != 0) {
-				pdf = pdf / FW_PI;
-			}
-			else {
-				// Since we're talking about probabilities here 1 = certain
-				pdf = 1;
-			}
+			z = sqrt(1 - x*x - y*y);
+
+			P2 = Vec3f(x, y, z);
 
 			// Conversion to vertex hemisphere
 			P2 = B * P2;
@@ -127,7 +129,7 @@ void Radiosity::vertexTaskFunc( MulticoreLauncher::Task& task )
             // For our scenes, 100 is a good length. (I know, this special casing sucks.)
 
 			// Get direction, set len to 100
-			Vec3f n_dir = (P2 - o)*100;
+			Vec3f n_dir = P2.normalized()*100;
 
             // Shoot ray, see where we hit
             const RaycastResult result = ctx.m_rt->raycast( o, n_dir );
@@ -137,7 +139,7 @@ void Radiosity::vertexTaskFunc( MulticoreLauncher::Task& task )
 				const Vec3i& indices = result.tri->m_data.vertex_indices;
 
                 // check for backfaces => don't accumulate if we hit a surface from below!
-				// Uhm, not sure how to check this...
+				if (dot(result.tri->normal(), result.dir) > 0) { continue; }
 
                 // fetch barycentric coordinates
 				float alpha = result.u;
@@ -148,7 +150,7 @@ void Radiosity::vertexTaskFunc( MulticoreLauncher::Task& task )
 
                 // Ei = interpolated irradiance determined by ctx.m_vecPrevBounce from vertices using the barycentric coordinates
 				// Is it really this simple? 
-				Vec3f Ei = alpha * ctx.m_vecPrevBounce[0] + beta * ctx.m_vecPrevBounce[1] + (1 - alpha - beta) * ctx.m_vecPrevBounce[2];
+				Vec3f Ei = alpha * ctx.m_vecPrevBounce[indices[1]] + beta * ctx.m_vecPrevBounce[indices[2]] + (1 - alpha - beta) * ctx.m_vecPrevBounce[indices[0]];
 
                 // Divide incident irradiance by PI so that we can turn it into outgoing
                 // radiosity by multiplying by the reflectance factor below.
@@ -164,10 +166,6 @@ void Radiosity::vertexTaskFunc( MulticoreLauncher::Task& task )
                     const Texture& tex = mat->textures[MeshBase::TextureType_Diffuse];
                     const Image& teximg = *tex.getImage();
 
-
-					// TODO: Assignment1 Textures...
-                    // ...
-
 					Vec2f uv;
 					uv[0] = alpha;
 					uv[1] = beta;
@@ -176,14 +174,14 @@ void Radiosity::vertexTaskFunc( MulticoreLauncher::Task& task )
 					// Which bounce vec is this?
 					// Do I need to do this to them all?
 					auto diffuse = teximg.getVec4f(texelCoords).getXYZ();
-					Ei = diffuse * ctx.m_vecPrevBounce / FW_PI;
+					Ei *= diffuse;
                 }
                 else
                 {
                     // no texture, use constant albedo from material structure.
 
                     // (this is just one line)
-					Ei = mat->diffuse.getXYZ() * ctx.m_vecPrevBounce / FW_PI;
+					Ei *= mat->diffuse.getXYZ();
                 }
 
                 E += Ei;	// accumulate
@@ -230,8 +228,8 @@ void Radiosity::startRadiosityProcess( MeshWithColors* scene, AreaLight* light, 
 	m_context.m_vecSphericalZ.assign(scene->numVertices(), Vec3f(0, 0, 0));
 
     // fire away!
-    //m_launcher.setNumThreads(m_launcher.getNumCores());	// the solution exe is multithreaded
-    m_launcher.setNumThreads(1);							// but you have to make sure your code is thread safe before enabling this!
+    m_launcher.setNumThreads(m_launcher.getNumCores());	// the solution exe is multithreaded
+    //m_launcher.setNumThreads(1);							// but you have to make sure your code is thread safe before enabling this!
     m_launcher.popAll();
     m_launcher.push( vertexTaskFunc, &m_context, 0, scene->numVertices() );
 }
