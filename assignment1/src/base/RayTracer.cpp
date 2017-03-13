@@ -26,7 +26,18 @@ Vec2f getTexelCoords(Vec2f uv, const Vec2i size)
 	// UV coordinates range from negative to positive infinity. First map them
 	// to a range between 0 and 1 in order to support tiling textures, then
 	// scale the coordinates by image resolution and find the nearest pixel.
-	return Vec2f();
+
+	Vec2f mapped;
+
+	// Map to 0 - 1
+	mapped[0] = tan(uv[0] * FW_PI / 2);
+	mapped[1] = tan(uv[1] * FW_PI / 2);
+
+	// Scale to resolution
+	mapped[0] *= size[0];
+	mapped[1] *= size[1];
+
+	return mapped;
 }
 
 Mat3f formBasis(const Vec3f& n) {

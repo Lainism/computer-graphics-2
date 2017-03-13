@@ -39,8 +39,6 @@ void AreaLight::sample(float& pdf, Vec3f& p, int base, Random& rnd) {
     // Use the "base" input for controlling the progression of the sequence from
     // the outside. If you only implement purely random sampling, "base" is not required.
 
-    // (this does not do what it's supposed to!)
-
 	float x = rnd.getF32(-1, 1) * m_size.x;
 	float y = rnd.getF32(-1, 1) * m_size.y;
 
