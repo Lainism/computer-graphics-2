@@ -13,7 +13,7 @@ namespace FW {
 		AABB box; // Axis-aligned bounding box
 		int startPrim, endPrim; // Indices in the global list
 		bool isLeaf;
-		std::vector<RTTriangle> &n_tris;
+		RTTriangle n_tris[10] = { RTTriangle foo() };
 		std::unique_ptr<Node> leftChild;
 		std::unique_ptr<Node> rightChild;
 

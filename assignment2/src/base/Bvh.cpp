@@ -73,7 +73,7 @@ namespace FW
 		}
 		else {
 			for (int i = 0; i+i1 <= i2; i++) {
-				root.n_tris.push_back(m_tris[i1+i]);
+				root.n_tris[i] = m_tris[i1+i];
 			}
 			root.isLeaf = true;
 		}
