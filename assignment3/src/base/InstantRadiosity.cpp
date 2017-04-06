@@ -33,7 +33,7 @@ void InstantRadiosity::castIndirect(RayTracer *rt, MeshWithColors *scene, const 
     // based on what happens to the ray.
     for (int i = 0; i < num; i++)
     {
-        RaycastResult hit; // = rt->raycast(origs[i], dirs[i]);
+        RaycastResult hit = rt->raycast(origs[i], dirs[i]);
 
         if ( hit.tri != nullptr )
         {
@@ -44,7 +44,53 @@ void InstantRadiosity::castIndirect(RayTracer *rt, MeshWithColors *scene, const 
             // A lot of this code is like in the Assignment 2's corresponding routine.
 
             // Replace this with true once your light is ready to be used in rendering:
-            m_indirectLights[i].setEnabled(false);
+            m_indirectLights[i].setEnabled(true);
+
+			// Where is the hit point?
+			m_indirectLights[i].setPosition(hit.point);
+
+			// What direction should the light point to?
+			Vec3f n = hit.tri->normal();
+			if (dot(n, hit.dir) > 0) { n = -n; }
+			Mat3f B = formBasis( -n );
+			m_indirectLights[i].setOrientation( B );
+
+			// Set the FOV based on the FOV member variable in InstantRadiosity
+			m_indirectLights[i].setFOV(m_indirectFOV);
+
+			// What is the emission? It is the entry in the emission intensity list returned by the
+			// sampler, multiplied by the surface color{ so if there's a texture, you'll need to fetch
+			// the value.Otherwise use the surface diuse color.
+
+			float alpha = hit.u;
+			float beta = hit.v;
+
+			Vec3f Ei = E_times_pdf[i];
+
+			// check for texture
+			const auto mat = hit.tri->m_material;
+			if (mat->textures[MeshBase::TextureType_Diffuse].exists())
+			{
+				const Texture& tex = mat->textures[MeshBase::TextureType_Diffuse];
+				const Image& teximg = *tex.getImage();
+
+				Vec2f uv;
+				uv[0] = alpha;
+				uv[1] = beta;
+				Vec2i texelCoords = getTexelCoords(uv, teximg.getSize());
+
+				auto diffuse = teximg.getVec4f(texelCoords).getXYZ();
+				Ei *= diffuse;
+			}
+			else
+			{
+				// no texture, use constant albedo from material structure.
+
+				// (this is just one line)
+				Ei *= mat->diffuse.getXYZ();
+			}
+
+			m_indirectLights[i].setEmission(Ei);
         }
         else
         {
@@ -59,6 +105,14 @@ void InstantRadiosity::renderShadowMaps(MeshWithColors *scene)
     // YOUR CODE HERE (R4):
     // Loop through all lights, and call the shadow map renderer for those that are enabled.
     // (see App::renderFrame for an example usage of the shadow map rendering call)
+	int light_num = this->getNumLights();
+
+	for (int i = 0; i < light_num; i++) {
+		if (m_indirectLights[i].isEnabled())
+		{
+			m_indirectLights[i].renderShadowMap(m_gl, scene, &m_smContext);
+		}
+	}
 }
 
 

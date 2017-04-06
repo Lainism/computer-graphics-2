@@ -350,6 +350,51 @@ void LightSource::sampleEmittedRays(int num, std::vector<Vec3f>& origs, std::vec
     // Note that the lambert cosine of the diffuse area light will cancel out.
 
     // See the instructions.
+
+	//if (size(origs) < 1) { return; }
+		
+	// Emit a given number of lights regardless of the cone opening angle.
+	
+	Vec3f n(this->getNormal());
+	Mat3f base = formBasis(n);
+
+	for (int i = 0; i < num; i++) {
+
+
+		float x, y, z;
+		while (true) {
+			// Pick a point in the xy-plane unit circle e.g. by using rejection sampling
+			x = rand.getF32(-1, 1);
+			y = rand.getF32(-1, 1);
+
+			if (x*x + y*y <= 1) { break; }
+		}
+
+		// Calculate r
+		float r = sin(this->getFOVRad() / 2);
+
+		// Scale the point coordinates by a factor r that depends on the FOV, so that your samples will lie on a smaller circle of radius r.
+		x *= r;
+
+		// Lift the points up to the unit sphere by setting z
+		z = sqrt(1 - x*x - y*y);
+
+		// ERROR: inserting
+		auto temp = Vec4f(m_xform.getCol(3));
+		origs.push_back(temp.getXYZ());
+
+		// Set the light source's emission, divided by the number of light sources we are shooting
+		auto temp2 = m_E / num * r * r;
+
+		// Multiply emission by r^2
+		E_times_pdf.push_back(temp2);
+
+		// Multiply the ray lengths by the maximum length (you can use the far plane distance of the light)
+		auto temp3 = Vec3f(x, y, z) * m_far;
+
+		// Rotate with basis
+		dirs.push_back(base * temp3);
+	}
 }
 
 
