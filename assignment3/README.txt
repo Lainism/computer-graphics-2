@@ -32,10 +32,10 @@ Not to my knowledge.
 
 (Did you help others? Did others help you? Let us know who you talked to, and what sort of help you gave or received.)
 
-Mainly just attended excercise sessions.
+Mainly just attended the excercise sessions.
 
 # Any other comments you'd like to share about the assignment or the course so far?
 
 (Was the assignment too long? Too hard? Fun or boring? Did you learn something, or was it a total waste of time? Can we do something differently to help you learn? Please be brutally honest; we won't take it personally.)
 
-BUSY, BUSY, BUSY!! Why did ther last excercise session have to be on exam week?
+BUSY, BUSY, BUSY!! Why did the deadline have to be on exam week?
