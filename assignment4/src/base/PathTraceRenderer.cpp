@@ -22,10 +22,6 @@ namespace FW {
 		// Read value from albedo texture into diffuse.
 	    // If textured, use the texture; if not, use Material.diffuse.
 	    // Note: You can probably reuse parts of the radiosity assignment.
-		float alpha = hit.u;
-		float beta = hit.v;
-
-		Vec3f Ei = specular;
 
 		// check for texture
 		const auto mat = hit.tri->m_material;
@@ -34,22 +30,25 @@ namespace FW {
 			const Texture& tex = mat->textures[MeshBase::TextureType_Diffuse];
 			const Image& teximg = *tex.getImage();
 
-			Vec2f uv;
-			uv[0] = alpha;
-			uv[1] = beta;
+			Vec2f uv = (1 - hit.u - hit.v) * hit.tri->m_vertices[0].t + hit.u * hit.tri->m_vertices[1].t + hit.v * hit.tri->m_vertices[2].t;
 			Vec2i texelCoords = getTexelCoords(uv, teximg.getSize());
 
-			// TODO: Raise to the power of 2.2???
-			diffuse = Math::pow(teximg.getVec4f(texelCoords).getXYZ(), 2.2f);
-			Ei *= diffuse;
+			auto tmp = teximg.getVec4f(texelCoords).getXYZ();
+			auto d1 = pow(tmp.x, 2.2f);
+			auto d2 = pow(tmp.y, 2.2f);
+			auto d3 = pow(tmp.z, 2.2f);
+			diffuse = Vec3f(d1, d2, d3);
 		}
 		else
 		{
 			// no texture, use constant albedo from material structure.
 
 			// (this is just one line)
-			Ei *= mat->diffuse.getXYZ();
+			diffuse = mat->diffuse.getXYZ();
 		}
+
+		n = (1 - hit.u - hit.v) * hit.tri->m_vertices[0].n + hit.u * hit.tri->m_vertices[1].n + hit.v * hit.tri->m_vertices[2].n;
+		n.normalize();
 	}
 
 
@@ -136,7 +135,6 @@ Vec3f PathTraceRenderer::tracePath(float image_x, float image_y, PathTracerConte
 	float p = 1.0f;
 
 	const float m_pi = 3.1415926535897932384626433832795f;
-	Mat3f B = formBasis(n);
 
 	if (result.tri != nullptr)
 	{
@@ -149,13 +147,13 @@ Vec3f PathTraceRenderer::tracePath(float image_x, float image_y, PathTracerConte
 		// Wasn't this already done above...?
 
 		Vec3f light = 0.0f;
-		float prob = 0.0f;
+		float prob = 1.0f;
 		int bounce = 0;
 
 		// Insert path tracing loop here
 		while (true) {
 			Vec3f coord = result.point;
-			Vec3f n = result.tri->normal;
+			Vec3f h_n;
 
 			// Fetch bayocentric coords
 			float alpha = result.u;
@@ -165,12 +163,11 @@ Vec3f PathTraceRenderer::tracePath(float image_x, float image_y, PathTracerConte
 			Vec3f color;
 			getTextureParameters(result, color, h_n, light);
 
+			Mat3f B = formBasis(h_n);
+
 			// To get smooth normals, interpolate the vertex normals to the hit position and normalize it.
 			// The normal is interpolated according to the hit barycentrics similarly to texture coordinates.
-			Vec2f uv;
-			uv[0] = alpha;
-			uv[1] = beta;
-			Vec3f h_n = getTexelCoords(uv, ???);
+			// Done in getTextureParameters
 
 			// If this was the first ray from the camera and the hit point is the actual light source, add the emission to the radiance returned by the path
 			/*
@@ -182,44 +179,45 @@ Vec3f PathTraceRenderer::tracePath(float image_x, float image_y, PathTracerConte
 			// Draw a point from the light source surface, trace a shadow ray, and add the appropriate contribution to the radiance returned by the path. Be careful with the probabilities.
 			// Like this??? 
 			// From the shader last time...
+			float pdf;
+			Vec3f Pl;
+			ctx.m_light->sample(pdf, Pl, 1, R);
 
 			// 1/PI, from the diffuse BRDF
-			float brdf = (1.0f / m_pi); // *diffuseColor.rgb;
+			Vec3f brdf = (1.0f / m_pi) * color;
 
 			// Inverse square of the distance from the surface point to the light
 			// It might be also -Rd? idk.
-			Vec3f l_dir = Rd;
-			float i_dist = clamp(1.0f / (l_dir.x*l_dir.x + l_dir.y*l_dir.y + l_dir.z*l_dir.z), 0.0f, 10.0f);
+			Vec3f l_dir = Pl - coord;
+			float i_dist = 1.0f / l_dir.lenSqr();
 
 			// Cosine of the angle between the surface normal and the incident lighting direction.
-			float cos_s = clamp(dot(-n, l_dir), 0.0f, 1.0f);
+			float cos_s = clamp(dot(-ctx.m_light->getNormal(), l_dir.normalized()), 0.0f, 1.0f);
 
 			// Cosine of the angle between the light normal and the incident lighting direction.
-			float cos_l = clamp(dot(h_n, l_dir), 0.0f, 1.0f);
+			float cos_l = clamp(dot(h_n, l_dir.normalized()), 0.0f, 1.0f);
 
-			// Spotlight emission distribution, i.e. the circular cone.
-			// Where do I get lightFOVRad??
-			float cone = max(0, min(1, 4 * (dot(normalize(h_n), normalize(l_dir)) - cos(lightFOVRad / 2.0f)) / (1 - cos(lightFOVRad / 2.0f))));
-			//float cone = 1.0f;
+			auto cast_res = ctx.m_rt->raycast((coord + 0.001f * h_n), l_dir);
 
-			// Multiply them all...
-			light = light * brdf * i_dist * cos_s * cos_l;
-
-			// Terminate or not?
-			// Fixed number of bounces
-			if (ctx.m_bounces >= 0 && ctx.m_bounces <= bounce) {
-				break;
+			// trace shadow ray to see if it's blocked
+			if (cast_res.tri == nullptr) {
+				// Multiply them all...
+				light += ctx.m_light->getEmission() * brdf * i_dist * cos_s * cos_l * throughput / prob / pdf;
 			}
 
+			// Terminate or not?
 			// Russian roulette
 			if (ctx.m_bounces < 0) {
 				// Probability for this round... 20%
 				float f = 0.2f;
 				float r = R.getF32();
-
-				if (f < r) {
+				prob *= (1.0f - f);
+				if (f > r) {
 					break;
 				}
+			} else if (ctx.m_bounces <= bounce) {
+				// Fixed number of bounces
+				break;
 			}
 
 			//Indirect ray casting
@@ -246,7 +244,14 @@ Vec3f PathTraceRenderer::tracePath(float image_x, float image_y, PathTracerConte
 			Vec3f n_dir = P2.normalized() * 100;
 
 			// Shoot ray, see where we hit
-			result = ctx.m_rt->raycast(Ro, n_dir);
+			result = ctx.m_rt->raycast((coord + 0.001f * h_n), n_dir);
+
+			if (result.tri == nullptr) {
+				break;
+			}
+
+			throughput = brdf * throughput * clamp(dot(h_n.normalized(), n_dir.normalized()), 0.0f, 1.0f);
+			prob *= clamp(dot(h_n.normalized(), n_dir.normalized()), 0.0f, 1.0f) / m_pi;
 
 			bounce++;
 		}

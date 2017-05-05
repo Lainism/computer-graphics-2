@@ -24,8 +24,17 @@ void AreaLight::sample(float& pdf, Vec3f& p, int base, Random& rnd) {
     // YOUR CODE HERE (R1): Integrate your area light implementation.
 
     // (this does not do what it's supposed to!)
-    pdf = 1.0f;
-    p = Vec4f(m_xform.getCol(3)).getXYZ();
+	float x = rnd.getF32(-1, 1) * m_size.x;
+	float y = rnd.getF32(-1, 1) * m_size.y;
+
+	// 1 / surface area of light
+	pdf = 1.0f / (4 * m_size.x*m_size.y);
+	Vec4f temp;
+	temp[0] = x;
+	temp[1] = y;
+	temp[3] = 1.0f;
+
+	p = (m_xform * temp).getXYZ();
 }
 
 
