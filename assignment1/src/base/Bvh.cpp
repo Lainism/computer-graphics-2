@@ -60,18 +60,22 @@ namespace FW
 
 		int delta = i2 - i1;
 		
-		root.leftChild = std::make_unique<Node>();
-		root.rightChild = std::make_unique<Node>();
+		root.leftChild.push_back(std::make_unique<Node>());
+		root.rightChild.push_back(std::make_unique<Node>());
 		
 		// if empty, return and create node
 		// add stuff to nodevector
-		if (i1 < i2) {
-			Bvh::Build(i1, delta / 2 + i1, *(root.leftChild));
-			Bvh::Build(delta / 2 + i1 + 1, i2, *(root.rightChild));
+		if (delta > nodesInLeaf) {
+			Bvh::Build(i1, delta / 2 + i1, *root.leftChild[0]);
+			Bvh::Build(delta / 2 + i1 + 1, i2, *root.rightChild[0]);
 
 			root.isLeaf = false;
 		}
 		else {
+			for (int i = 1; i < nodesInLeaf; i++) {
+				root.leftChild.push_back(std::make_unique<Node>());
+				root.rightChild.push_back(std::make_unique<Node>());
+			}
 			root.isLeaf = true;
 		}
 	}

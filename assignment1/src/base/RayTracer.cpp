@@ -156,23 +156,25 @@ RaycastResult RayTracer::recursiveHelper(const Vec3f& orig, const Vec3f& dir, in
 		// We're in a leaf node
 		// TODO: loop through triangles (2-20?)
 		float t, u, v;
-		if ((*tree).m_tris[root->startPrim].intersect_woop(orig, dir, t, u, v))
-		{
-			if (t > 0.0f && t < tmin)
+		for (int i = 0; i < tree->nodesInLeaf; i++) {
+			if ((*tree).m_tris[(root->startPrim)+i].intersect_woop(orig, dir, t, u, v))
 			{
-				imin = root->startPrim;
-				tmin = t;
-				umin = u;
-				vmin = v;
-				leafhit = true;
+				if (t > 0.0f && t < tmin)
+				{
+					imin = (root->startPrim)+i;
+					tmin = t;
+					umin = u;
+					vmin = v;
+					leafhit = true;
+				}
 			}
 		}
 	}
 	else {
 
 		// What if there is only one node? - Impossible
-		AABB left_box = root->leftChild->box;
-		AABB right_box = root->rightChild->box;
+		AABB left_box = root->leftChild[0]->box;
+		AABB right_box = root->rightChild[0]->box;
 
 		// Compare both
 		// if tmin < xmin -> skip
@@ -180,8 +182,8 @@ RaycastResult RayTracer::recursiveHelper(const Vec3f& orig, const Vec3f& dir, in
 		float xmin2;
 		bool t1 = check_intersect(left_box, orig, dir, xmin1);
 		bool t2 = check_intersect(right_box, orig, dir, xmin2);
-		Node* child1 = root->leftChild.get();
-		Node* child2 = root->rightChild.get();
+		Node* child1 = root->leftChild[0].get();
+		Node* child2 = root->rightChild[0].get();
 		float bigger = xmin2;
 
 		if (xmin1 > xmin2) {
