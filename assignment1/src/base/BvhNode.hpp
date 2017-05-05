@@ -12,8 +12,8 @@ namespace FW {
 		AABB box; // Axis-aligned bounding box
 		int startPrim, endPrim; // Indices in the global list
 		bool isLeaf;
-		std::vector<std::unique_ptr<Node>> leftChild;
-		std::vector<std::unique_ptr<Node>> rightChild;
+		std::unique_ptr<Node> leftChild;
+		std::unique_ptr<Node> rightChild;
 
 		Node();
 		~Node();

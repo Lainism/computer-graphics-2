@@ -62,7 +62,7 @@ namespace FW
 		
 		root.leftChild = std::make_unique<Node>();
 		root.rightChild = std::make_unique<Node>();
-		
+
 		// if empty, return and create node
 		// add stuff to nodevector
 		if (delta > nodesInLeaf) {

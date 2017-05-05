@@ -46,11 +46,10 @@ public:
 	int getRayCount() { return m_rayCount; }
 
 private:
+	RaycastResult		recursiveHelper(const Vec3f& orig, const Vec3f& dir, int& imin, float& tmin, Node* root) const;
 	mutable std::atomic<int> m_rayCount;
-    // YOUR CODE HERE (R1):
-    // This is the library implementation of the ray tracer.
-    // Remove this once you have integrated your own ray tracer.
-    std::unique_ptr<rtlib::RayTracer> m_rt; 
+	Bvh* tree;
+	bool check_intersect(AABB& box, const Vec3f& orig, const Vec3f& dir, float& tmin) const;
 };
 
 

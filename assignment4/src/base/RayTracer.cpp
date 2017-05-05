@@ -82,7 +82,7 @@ RayTracer::RayTracer()
     // YOUR CODE HERE (R1):
     // Integrate your implementation here.
     // After that this is not needed anymore.
-    m_rt.reset(new rtlib::RayTracer);
+    //m_rt.reset(new rtlib::RayTracer);
 }
 
 RayTracer::~RayTracer()
@@ -94,30 +94,145 @@ void RayTracer::loadHierarchy(const char* filename, std::vector<RTTriangle>& tri
 {
     // YOUR CODE HERE (R1):
     // Integrate your implementation here.
-	m_rt->loadHierarchy(filename, triangles);
 	m_triangles = &triangles;
 }
 
 void RayTracer::saveHierarchy(const char* filename, const std::vector<RTTriangle>& triangles) {
     // YOUR CODE HERE (R1):
     // Integrate your implementation here.
-    m_rt->saveHierarchy(filename, triangles);
 }
 
 void RayTracer::constructHierarchy(std::vector<RTTriangle>& triangles, SplitMode splitMode) {
     // YOUR CODE HERE (R1):
     // Integrate your implementation here.
-	m_rt->constructHierarchy(triangles, splitMode);
+	tree = new Bvh(triangles, splitMode);
 	m_triangles = &triangles;
 }
 
+bool RayTracer::check_intersect(AABB& box, const Vec3f& orig, const Vec3f& dir, float& tmin) const {
+
+	auto vmin = box.min;
+	auto vmax = box.max;
+
+	auto xmin = (vmin[0] - orig[0]) / dir[0];
+	auto xmax = (vmax[0] - orig[0]) / dir[0];
+
+	auto ymin = (vmin[1] - orig[1]) / dir[1];
+	auto ymax = (vmax[1] - orig[1]) / dir[1];
+
+	auto zmin = (vmin[2] - orig[2]) / dir[2];
+	auto zmax = (vmax[2] - orig[2]) / dir[2];
+
+	if (xmin > xmax) { std::swap(xmin, xmax); }
+	if (ymin > ymax) { std::swap(ymin, ymax); }
+	if (zmin > zmax) { std::swap(zmin, zmax); }
+
+	if ((xmin > ymax) || (ymin > xmax)) { return false; }
+
+	if (ymin > xmin) { xmin = ymin; }
+	if (ymax < xmax) { xmax = ymax; }
+
+	if ((xmin > zmax) || (zmin > xmax)) { return false; }
+
+	if (zmin > xmin) { xmin = zmin; }
+	if (zmax < xmax) { xmax = zmax; }
+
+	tmin = xmin;
+
+	return true;
+}
+
+RaycastResult RayTracer::recursiveHelper(const Vec3f& orig, const Vec3f& dir, int& imin, float& tmin, Node* root) const {
+	AABB left_box;
+	AABB right_box;
+
+	float umin = 0.0f, vmin = 0.0f;
+
+	RaycastResult castresult;
+	RaycastResult h1;
+	RaycastResult h2;
+	bool leafhit = false;
+	bool both = false;
+
+	if (root->isLeaf) {
+		// We're in a leaf node
+		// TODO: loop through triangles (2-20?)
+		float t, u, v;
+		for (int i = root->startPrim; i <= root->endPrim; i++) {
+			if ((*tree).m_tris[i].intersect_woop(orig, dir, t, u, v))
+			{
+				if (t > 0.0f && t < tmin)
+				{
+					imin = i;
+					tmin = t;
+					umin = u;
+					vmin = v;
+					leafhit = true;
+				}
+			}
+		}
+	}
+	else {
+
+		// What if there is only one node? - Impossible
+		AABB left_box = root->leftChild->box;
+		AABB right_box = root->rightChild->box;
+
+		// Compare both
+		// if tmin < xmin -> skip
+		float xmin1;
+		float xmin2;
+		bool t1 = check_intersect(left_box, orig, dir, xmin1);
+		bool t2 = check_intersect(right_box, orig, dir, xmin2);
+		Node* child1 = root->leftChild.get();
+		Node* child2 = root->rightChild.get();
+		float bigger = xmin2;
+
+		if (xmin1 > xmin2) {
+			std::swap(child1, child2);
+			std::swap(t1, t2);
+			bigger = xmin1;
+		}
+
+		// Calculate if the ray hits children based on origo and direction
+		if (t1) {
+			h1 = recursiveHelper(orig, dir, imin, tmin, child1);
+		}
+
+		if (t2 && (bigger < tmin)) {
+			h2 = recursiveHelper(orig, dir, imin, tmin, child2);
+			both = true;
+		}
+	}
+
+	// Changed triangles to using tree's local list, since it's sorted the same way as Bvh
+	if (leafhit) {
+		castresult = RaycastResult(&tree->m_tris[imin], tmin, umin, vmin, orig + tmin*dir, orig, dir);
+	}
+	else {
+		if (!both || (h1.t < h2.t)) {
+			castresult = h1;
+		}
+		else {
+			castresult = h2;
+		}
+	}
+
+	return castresult;
+}
 
 RaycastResult RayTracer::raycast(const Vec3f& orig, const Vec3f& dir) const {
 	++m_rayCount;
 
     // YOUR CODE HERE (R1):
     // Integrate your implementation here.
-    return m_rt->raycast(orig, dir);
+	Node* root = (*tree).root.get();
+	int imin = -1;
+	float tmin = 1.0f;
+
+	RaycastResult castresult = RayTracer::recursiveHelper(orig, dir, imin, tmin, root);
+
+	return castresult;
 }
 
 
